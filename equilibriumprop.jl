@@ -1,0 +1,172 @@
+const FloatXX = Float64
+const datapath = "$(Base.source_dir())/data"
+using NetSim
+include("neurons.jl")
+include("helper.jl")
+include("targetfunctions.jl")
+include("connectfunctions.jl")
+include("getnets.jl")
+
+
+# helper
+
+function averageoutput(output::Array{FloatXX, 1},
+					   groupsize::Int64,
+					   n_ofgroups::Int64)
+	[mean(output[groupsize * (i - 1) + 1 : groupsize * i]) 
+		for i in 1:n_ofgroups]
+end
+function getinputtraceprediction(net)
+	prediction = zeros(net.layers[:outputlayer].n_of)
+	for con in values(net.layers[:outputlayer].inputconnections[:default])
+		prediction += con.w * con.pre.trace
+	end
+	clamp(prediction, 0, Inf64)
+end
+function getaverageinputtraceprediction(net)
+	groupsize = div(net.layers[:outputlayer].n_of, net.layers[:targetlayer].n_of)
+	n_ofgroups = net.layers[:targetlayer].n_of
+	averageoutput(getinputtraceprediction(net), groupsize, n_ofgroups)
+end
+function getoutputprediction(net)
+	net.layers[:outputlayer].neurons.outp
+end
+randinput() = rand(2)
+scaledrandinput() = .8rand(2) + .1
+scaledtargetfunction(x) = Z((x - .1)/.8)
+
+
+# config
+
+abstract Config
+@savable type EquipropConfig <: Config
+	stepsforward::Int64
+	stepsbackward::Int64
+	inputfunction::Function
+	targetfunction::Function
+	n_ofsamples::Int64
+	learningrate::Array{FloatXX, 1}
+	records::Int64
+	outputprocessor::Function
+end
+function EquipropConfig(net;
+						stepsforward = 50,
+						stepsbackward = 2,
+						inputfunction = randinput,
+						targetfunction = Z,
+						n_ofsamples = 10^6,
+						learningratefactor = .5,
+						learningrate = learningratefactor*getlrates(net),
+						records = 10,
+						outputprocessor = getinputtraceprediction)
+	EquipropConfig(stepsforward, stepsbackward, inputfunction, 
+				targetfunction, n_ofsamples, learningrate, records, 
+				outputprocessor)
+end
+
+function getlrates(net)
+	lrates = FloatXX[]
+	for c in net.plasticconnections
+		nin = 0
+		for (name, pre) in net.layers[c.postname].inputconnections[:default]
+			nin += net.layers[name].n_of
+		end
+		push!(lrates, 1/sqrt(nin))
+	end
+	lrates
+end
+
+# learning
+
+function forwardphase!(net::SimpleNetwork, conf::Config)
+	forwardphase!(net, conf, conf.inputfunction()) 
+end
+
+function forwardphase!(net::SimpleNetwork, conf::Config, input::Array{FloatXX, 1})
+	if typeof(net.layers[:outputlayer].neurons.p) == ScellierOutputNeuronParameters
+		net.layers[:outputlayer].neurons.p.beta = 0.
+	elseif typeof(net.layers[:outputlayer].neurons) == SRM0TwoCompNeuron 
+		net.layers[:outputlayer].neurons.p.gI = 0.
+	end
+	net.layers[:inputlayer].neurons.outp[:] = input
+	net.layers[:targetlayer].neurons.outp[:] = zeros(net.layers[:targetlayer].n_of)
+	for t in 1:conf.stepsforward
+		updatenet!(net)
+	end
+	conf.outputprocessor(net)
+end
+
+function backwardphase!(net::SimpleNetwork, conf::Config, 
+						target::Array{FloatXX, 1})
+	if typeof(net.layers[:outputlayer].neurons.p) == ScellierOutputNeuronParameters
+		net.layers[:outputlayer].neurons.p.beta =
+				net.layers[:outputlayer].neurons.p.beta0
+	elseif typeof(net.layers[:outputlayer].neurons) == SRM0TwoCompNeuron 
+		net.layers[:outputlayer].neurons.p.gI = 1
+	end
+	net.layers[:targetlayer].neurons.outp[:] = target
+	for t in 1:conf.stepsbackward
+		updatenet!(net)
+	end
+end
+
+function delayedantihebbianupdate!(net, pretraces, posttraces, learningrate)
+	for (i, con) in enumerate(net.plasticconnections)
+		delayedantihebbianupdate!(con, pretraces[i], posttraces[i],
+								  learningrate[i])
+	end
+end
+
+function delayedantihebbianupdate!(con::PlasticDenseConnection, 
+								   pretraces, posttraces, learningrate)
+	BLAS.ger!(learningrate, con.post.trace, con.pre.trace, con.w)
+	BLAS.ger!(-learningrate, posttraces, pretraces, con.w)
+end
+
+function delayedantihebbianupdate!(con::PlasticSparseConnection, 
+								   pretraces, posttraces, learningrate)
+	for i in 1:con.w.nnz
+		con.w.V[i] += learningrate * 
+				       (con.post.trace[con.w.I[i]] * con.pre.trace[con.w.J[i]] -
+						posttraces[con.w.I[i]] * pretraces[con.w.J[i]])
+	end
+end
+
+function copytraces!(pretraces, posttraces, net)
+	@inbounds for i in 1:length(pretraces)
+		copy!(pretraces[i], net.plasticconnections[i].pre.trace)
+		copy!(posttraces[i], net.plasticconnections[i].post.trace)
+	end
+end
+
+
+using ProgressMeter
+function learn!(net::SimpleNetwork, conf::EquipropConfig; 
+				silent = false)
+	losses = FloatXX[]
+	loss = FloatXX(0.)
+	divisor = div(conf.n_ofsamples, conf.records)
+	pretraces = []; posttraces = []
+	for con in net.plasticconnections
+		push!(pretraces, deepcopy(con.pre.trace))
+		push!(posttraces, deepcopy(con.post.trace))
+	end
+	@showprogress for t in 1:conf.n_ofsamples
+		input = conf.inputfunction()
+		target = conf.targetfunction(input)
+		prediction = forwardphase!(net, conf, input)
+		loss += norm(prediction - target)
+		if t % divisor == 0
+			push!(losses, loss/divisor)
+			silent ? nothing : println("\t$(loss/divisor)")
+			if loss/divisor > 1
+				break
+			end
+			loss = 0.
+		end
+		copytraces!(pretraces, posttraces, net)
+		backwardphase!(net, conf, target)
+		delayedantihebbianupdate!(net, pretraces, posttraces, conf.learningrate)
+	end
+	losses
+end
