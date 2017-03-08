@@ -1,6 +1,6 @@
-using JLD
-imgs, labels, imgstest, labelstest = load("$datapath/mnist.jld", "imgs", "labels",
-											"imgstest", "labelstest")
+using MNIST
+imgs, labels = traindata()
+imgstest, labelstest = testdata()
 
 function getimg()
 	global patternindex = rand(1:60000)
