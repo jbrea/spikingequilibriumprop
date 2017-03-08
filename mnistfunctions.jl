@@ -1,5 +1,5 @@
 using JLD
-imgs, labels, imgstest, labelstest = load("data/mnist.jld", "imgs", "labels",
+imgs, labels, imgstest, labelstest = load("$datapath/mnist.jld", "imgs", "labels",
 											"imgstest", "labelstest")
 
 function getimg()
