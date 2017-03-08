@@ -16,8 +16,8 @@ for _ in 1:50
 						 neuronparamsoutput = 
 							ScellierOutputNeuronParameters(tau_trace = tau,
 														   noiselevel = noiselevel))
-	conf = EquipropConfig(net, stepsforward = 50 + 10*ceil(Int64, tau),
-							   stepsbackward  = 2 + 2*ceil(Int64, tau),
+	conf = EquipropConfig(net, stepsforward = 50 + 15*ceil(Int64, tau),
+							   stepsbackward  = 2 + 4*ceil(Int64, tau),
 							   n_ofsamples = T)
 	push!(taus, tau)
 	push!(noiselevels, noiselevel)
