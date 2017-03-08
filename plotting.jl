@@ -34,7 +34,7 @@ end
 function plotsomepoints(net::Network, conf::EquipropConfig; 
 						n_ofpoints = 10^3, ax = nothing)
 	inputs = [conf.inputfunction() for i in 1:n_ofpoints]
-	predictions = map(x -> averageoutput(deepcopy(forwardphase!(net, conf, x))), inputs)
+	predictions = map(x -> deepcopy(forwardphase!(net, conf, x)), inputs)
 	targets = map(x -> conf.targetfunction(x), inputs)
 	plotsomepoints(inputs, predictions, targets, ax = ax)
 end
@@ -180,7 +180,7 @@ end
 
 function plotspikes(net, conf; 
 					input = [.1; .9], 
-					save = false, 
+					save1 = false, save2 = false,
 					aspect = 1,
 					T1 = conf.stepsforward,
 					T2 = conf.stepsbackward,
@@ -229,7 +229,7 @@ function plotspikes(net, conf;
 	ax[:set_xlabel]("time [ms]")
 	#ax[:set_ylabel]("neurons")
 	plt[:tight_layout]()
-	save ? savefig("$figspath/spiking.png", dpi = 100, bbox_inches="tight") : nothing
+	save1 ? savefig("$figspath/spiking.png", dpi = 100, bbox_inches="tight") : nothing
 	fig, (ax1, ax2, ax3) = subplots(3,1, figsize = (6,4))
 	ax1[:plot]([resfw["u"]; resbw["u"]][range] + 
 				[resfw["s"]; resbw["s"]][range])
@@ -250,7 +250,7 @@ function plotspikes(net, conf;
 	ax3[:set_xticks]([0; 100; 200; 300])
 	ax3[:set_xticklabels](T1 - 150 + collect(0:3)*100)
 	plt[:tight_layout]()
-	save ? savefig("$figspath/exampletrace.png") : nothing
+	save2 ? savefig("$figspath/exampletrace.png") : nothing
 	resfw
 end
 
