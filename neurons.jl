@@ -39,8 +39,9 @@ end
 function getextrafieldstwocomp(twocomp)
 	if twocomp
 		extrafields = :(somatic::Array{FloatXX, 1};
-						dendritic::Array{FloatXX, 1})
-		noffields = 2
+						dendritic::Array{FloatXX, 1};
+						prediction::Array{FloatXX, 1})
+		noffields = 3
 	else
 		extrafields = :(;)
 		noffields = 0

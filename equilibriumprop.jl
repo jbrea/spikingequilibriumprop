@@ -17,11 +17,13 @@ function averageoutput(output::Array{FloatXX, 1},
 		for i in 1:n_ofgroups]
 end
 function getinputtraceprediction(net)
-	prediction = zeros(net.layers[:outputlayer].n_of)
+	BLAS.scale!(0., net.layers[:outputlayer].neurons.prediction)
 	for con in values(net.layers[:outputlayer].inputconnections[:default])
-		prediction += con.w * con.pre.trace
+		BLAS.gemv!('N', 1., con.w, con.pre.trace, 1., 
+					net.layers[:outputlayer].neurons.prediction)
 	end
-	clamp(prediction, 0, Inf64)
+	clamp!(net.layers[:outputlayer].neurons.prediction, 0., Inf64)
+	net.layers[:outputlayer].neurons.prediction
 end
 function getaverageinputtraceprediction(net)
 	groupsize = div(net.layers[:outputlayer].n_of, net.layers[:targetlayer].n_of)
@@ -34,6 +36,10 @@ end
 randinput() = rand(2)
 scaledrandinput() = .8rand(2) + .1
 scaledtargetfunction(x) = Z((x - .1)/.8)
+# alias
+outputlayerprediction = getoutputprediction
+getlpfprediction = getinputtraceprediction
+averageoutput(net) = getaverageinputtraceprediction(net)
 
 
 # config
