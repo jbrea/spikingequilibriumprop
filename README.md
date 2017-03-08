@@ -1,4 +1,4 @@
-=== Installation ===
+## Installation 
 In julia 0.5 run
 ```julia
 Pkg.add("JLD")
@@ -8,5 +8,5 @@ Pkg.add("PyPlot")
 Pkg.clone("https://github.com/jbrea/NetSim")
 ```
 
-=== Examples ===
+## Examples
 See folder experiments.
