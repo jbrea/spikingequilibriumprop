@@ -6,7 +6,7 @@ losses = []
 
 T = 10^6
 
-for _ in 1:50
+for _ in 1:10
 	noiselevel = 10^-(3*rand())
 	tau = 198 * rand() + 2
 	net = getequipropnet([2; 30; 2],
