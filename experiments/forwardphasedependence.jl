@@ -1,4 +1,5 @@
 include("../equilibriumprop.jl")
+include("../backprop.jl")
 
 T0 = 5*10^6
 ns = [2; 30; 2]
