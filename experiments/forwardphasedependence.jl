@@ -2,7 +2,11 @@ include("../equilibriumprop.jl")
 include("../backprop.jl")
 
 T0 = 5*10^6
-ns = [2; 30; 2]
+if ARGS[2] == "1"
+	ns = [2; 30; 2]
+else
+	ns = [2; 30; 30; 2]
+end
 
 stepsf = []
 losses = []
@@ -26,4 +30,5 @@ end
 
 using JLD
 run(`mkdir -p $datapath/forwardphasedependence`)
-@save "$datapath/forwardphasedependence/equiprop-stepsforward$(ARGS[1]).jld" stepsf losses
+@save
+"$datapath/forwardphasedependence/equiprop-stepsforward$(ARGS[1])-$(ARGS[2]).jld" stepsf losses
