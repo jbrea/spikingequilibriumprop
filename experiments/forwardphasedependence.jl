@@ -35,5 +35,4 @@ end
 
 using JLD
 run(`mkdir -p $datapath/forwardphasedependence`)
-@save
-"$datapath/forwardphasedependence/equiprop-stepsforward$(ARGS[1])-$(ARGS[2])P2.jld" stepsf losses
+@save "$datapath/forwardphasedependence/equiprop-stepsforward$(ARGS[1])-$(ARGS[2])P2.jld" stepsf losses
