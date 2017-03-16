@@ -7,9 +7,9 @@ function getlayersdeepnet!(net::SimpleNetwork,
 					       neurontypeoutput = ReLiRateNeuron,
 						   neuronparamsoutput = NoNeuronParameters(),
 						   firstlayername = :firstlayer)
+	addlayer!(net, Layer(:biaslayer, InputRateNeuron, NoNeuronParameters(), 1))
 	addlayer!(net, Layer(firstlayername, neurontypeinput, 
 					  neuronparamsinput, layerdimensions[1]))
-	addlayer!(net, Layer(:biaslayer, InputRateNeuron, NoNeuronParameters(), 1))
 	net.layers[:biaslayer].neurons.outp[1] = 1.
 	nh = length(layerdimensions) - 2
 	for i in 1:nh
