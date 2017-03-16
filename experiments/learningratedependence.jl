@@ -56,13 +56,13 @@ losseseq = []
 for range in [1]
 	for i in 2.^collect(0:5)
 		for j in 1:2
+			push!(lrs, lr0/i/range)
 			if pa["withbackprop"]
 				net = BackpropNetwork(ns)
 				conf = BackpropConfig(net, 
 									  learningratefactor = lr0/i/range/4, 
 									  n_ofsamples = scaleT0(T0, i, range))
 				push!(lossesbp, learn!(net, conf))
-				push!(lrs, lr0/i/range)
 				net2 = BackpropNetwork(ns)
 				net2.b[1] = shuffle(net.b[1])
 				net2.w[1] = shuffle(net.w[1])
