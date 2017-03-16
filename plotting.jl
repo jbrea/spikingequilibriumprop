@@ -60,10 +60,10 @@ function plotsomepoints(inputs, predictions, targets; ax = nothing)
 	ax[:set_xlabel](L"x")
 end
 
-function gatherdata(name, range; key1 = "lrs", key2 = "losses")
+function gatherdata(name, range; key1 = "lrs", key2 = "losses", suff = "")
 	lrs = []; losses = [];
 	for i in collect(range)
-    res = load("$datapath/$name$i.jld");
+    res = load("$datapath/$name$i$suff.jld");
 	push!(lrs, res[key1])
     push!(losses, res[key2])
     end
@@ -91,10 +91,14 @@ function set_box_color(bp, color)
 end
 
 
-function plotlearningratedependence(; flag = "C", save = false)
+function plotlearningratedependence(; flag = "C", 
+									  save = false,
+									  suff = "")
 	fig = figure(figsize = (5, 4))
-	lrs, losses = gatherdata("learningratedependence/equiprop$flag-", 
-							 1:8, key2 = "losseseq")
+	lrs, losses = gatherdata("learningratedependence/equiprop-", 
+							 1:8, 
+							 suff = suff,
+							 key2 = "losseseq")
 	dat = sortdataforboxplot(lrs, losses)
 	bp1 = boxplot(dat)
 	set_box_color(bp1, "green")
@@ -109,7 +113,7 @@ function plotlearningratedependence(; flag = "C", save = false)
 							  Ls"\frac18", Ls"\frac1{16}", Ls"\frac1{32}"])
 	set_box_color(bp2, "blue")
 	plt[:yscale]("log")
-	plt[:ylim]([1e-3; 2e-2])
+	plt[:ylim]([1e-3; 9e-1])
 	plt[:xlabel]("learning rate (normalized)")
 	plt[:ylabel]("final error")
 	bl = mlines.Line2D([], [], color = "blue", label = "backprop")
@@ -125,20 +129,30 @@ function plotlearningratedependence(; flag = "C", save = false)
 end
 
 
-function plotforwardphasedependence(; save = false)
+function plotforwardphasedependence(; save = false, suff = "")
 	fig = figure(figsize = (5, 4))
 	ax = axes()
 	stepsf, losses = gatherdata("forwardphasedependence/equiprop-stepsforward",
-								1:8, key1 = "stepsf")
+								1:8, key1 = "stepsf", suff = "")
 	dat = reverse(sortdataforboxplot(stepsf, losses))
 	#lrs, losses = gatherdata("backprop-", 5:12)
 	#bp = sortdataforboxplot(lrs, losses)[1]
-	boxplot((dat[2:end]..., dat[1]), labels = [Ls"20", Ls"50", Ls"100", Ls"500", Ls"backprop"])
+	bp1 = boxplot((dat[2:end]..., dat[1]))
+	set_box_color(bp1, "green")
+	stepsf, losses = gatherdata("forwardphasedependence/equiprop-stepsforward",
+								1:24, key1 = "stepsf", suff = "-2")
+	dat = reverse(sortdataforboxplot(stepsf, losses))
+	bp2 = boxplot((dat[2:end]..., dat[1]), 
+				labels = [Ls"20", Ls"50", Ls"100", Ls"500", Ls"backprop"])
+	set_box_color(bp2, "blue")
 	ax[:set_yscale]("log")
-	ax[:set_ylim]([1.5e-3; 3e-2])
-	ax[:set_yticks]([2.5e-3, 5e-3, 1e-2, 2.5e-2])
-	ax[:set_yticklabels]([Ls"2.5\cdot10^{-3}", Ls"5\cdot10^{-3}", 
-					   Ls"10^{-2}", Ls"2.5\cdot10^{-2}"])
+	ax[:set_ylim]([1.e-3; 1])
+	bl = mlines.Line2D([], [], color = "blue", label = "2 hidden")
+	bg = mlines.Line2D([], [], color = "green", label = "1 hidden")
+	plt[:legend](handles=[bg; bl], loc = 1)
+	#ax[:set_yticks]([2.5e-3, 5e-3, 1e-2, 2.5e-2])
+	#ax[:set_yticklabels]([Ls"2.5\cdot10^{-3}", Ls"5\cdot10^{-3}", 
+	#				   Ls"10^{-2}", Ls"2.5\cdot10^{-2}"])
 	ax[:set_ylabel]("final error")
 	ax[:set_xlabel]("duration forward phase")
 	plt[:tight_layout]()
@@ -147,7 +161,7 @@ end
 
 function plotnoisedependence(; save = false)
 	x = []; y = []; z = Float64[];
-	for i in 1:24
+	for i in 1:48
 		try
 		dat = load("$datapath/noisedependence/$i.jld")
 		x = [x; dat["taus"]]
