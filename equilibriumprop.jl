@@ -88,7 +88,7 @@ function forwardphase!(net::SimpleNetwork, conf::Config)
 	forwardphase!(net, conf, conf.inputfunction()) 
 end
 
-function forwardphase!(net::SimpleNetwork, conf::Config, input::Array{FloatXX, 1})
+function forwardphase!(net::SimpleNetwork, conf::EquipropConfig, input::Array{FloatXX, 1})
 	if typeof(net.layers[:outputlayer].neurons.p) == ScellierOutputNeuronParameters
 		net.layers[:outputlayer].neurons.p.beta = 0.
 	elseif typeof(net.layers[:outputlayer].neurons) == SRM0TwoCompNeuron 
@@ -102,7 +102,7 @@ function forwardphase!(net::SimpleNetwork, conf::Config, input::Array{FloatXX, 1
 	conf.outputprocessor(net)
 end
 
-function backwardphase!(net::SimpleNetwork, conf::Config, 
+function backwardphase!(net::SimpleNetwork, conf::EquipropConfig, 
 						target::Array{FloatXX, 1})
 	if typeof(net.layers[:outputlayer].neurons.p) == ScellierOutputNeuronParameters
 		net.layers[:outputlayer].neurons.p.beta =
