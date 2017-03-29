@@ -47,7 +47,7 @@ function getequipropnet(layerdimensions::Array{Int64, 1};
 						backwardconnectiontype = TransposeDenseConnection,
 						inputdimension = 2, targetdimension = 2,
 						inputconnectiontype = One2OneConnection,
-						targetconnectiontype = One2OneConnection)
+						targetconnectiontype = One2OneConnection, vargs...)
 	#srand(1)
 	net = SimpleNetwork()
 	if neurontypeinput == InputRateNeuron 

@@ -70,7 +70,6 @@ export MarkovNeuronParameters
 type ScellierOutputNeuronParameters <: NeuronParameters
 	gamma::FloatXX
 	beta::FloatXX
-	beta0::FloatXX
 	noiselevel::FloatXX
 	tau_trace::FloatXX
 end
@@ -78,7 +77,7 @@ function ScellierOutputNeuronParameters(;gamma = .5,
 										 beta = .5,
 										 noiselevel = 0.,
 										 tau_trace = 100)
-	ScellierOutputNeuronParameters(gamma, beta, beta, noiselevel, tau_trace)
+	ScellierOutputNeuronParameters(gamma, beta, noiselevel, tau_trace)
 end
 export ScellierOutputNeuronParameters
 

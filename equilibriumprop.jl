@@ -48,14 +48,16 @@ abstract Config
 @savable type EquipropConfig <: Config
 	stepsforward::Int64
 	stepsbackward::Int64
+	beta::Float64
 	inputfunction::Function
 	targetfunction::Function
 	n_ofsamples::Int64
 	learningrate::Array{FloatXX, 1}
 	records::Int64
 	outputprocessor::Function
+	seed::UInt64
 end
-function EquipropConfig(net;
+function EquipropConfig(net, seed;
 						stepsforward = 50,
 						stepsbackward = 2,
 						inputfunction = randinput,
@@ -64,10 +66,23 @@ function EquipropConfig(net;
 						learningratefactor = .5,
 						learningrate = learningratefactor*getlrates(net),
 						records = 10,
-						outputprocessor = getinputtraceprediction)
-	EquipropConfig(stepsforward, stepsbackward, inputfunction, 
+						outputprocessor = getinputtraceprediction,
+						beta = .5, vargs...)
+	EquipropConfig(stepsforward, stepsbackward, beta, inputfunction, 
 				targetfunction, n_ofsamples, learningrate, records, 
-				outputprocessor)
+				outputprocessor, seed)
+end
+function getequipropnetandconf(ns; 
+							   seed = rand(0:typemax(UInt64) - 1),
+							   vargs...)
+	srand(seed)
+	net = getequipropnet(ns; vargs...)
+	conf = EquipropConfig(net, seed; vargs...)
+	net, conf
+end
+function createandrunsim(ns; vargs...)
+	net, conf = getequipropnetandconf(ns; vargs...)
+	learn!(net, conf, save = true)
 end
 
 function getlrates(net)
@@ -105,8 +120,7 @@ end
 function backwardphase!(net::SimpleNetwork, conf::EquipropConfig, 
 						target::Array{FloatXX, 1})
 	if typeof(net.layers[:outputlayer].neurons.p) == ScellierOutputNeuronParameters
-		net.layers[:outputlayer].neurons.p.beta =
-				net.layers[:outputlayer].neurons.p.beta0
+		net.layers[:outputlayer].neurons.p.beta = conf.beta
 	elseif typeof(net.layers[:outputlayer].neurons) == SRM0TwoCompNeuron 
 		net.layers[:outputlayer].neurons.p.gI = 1
 	end
@@ -145,10 +159,15 @@ function copytraces!(pretraces, posttraces, net)
 	end
 end
 
+function savesim(net, conf, losses)
+	run(`mkdir -p $datapath/dump`)
+	filename = "$datapath/dump/" * string(hash(losses)) * ".jld"
+	@save filename net conf losses
+end
 
 using ProgressMeter
 function learn!(net::SimpleNetwork, conf::EquipropConfig; 
-				silent = false)
+				silent = false, save = false)
 	losses = FloatXX[]
 	loss = FloatXX(0.)
 	divisor = div(conf.n_ofsamples, conf.records)
@@ -174,5 +193,6 @@ function learn!(net::SimpleNetwork, conf::EquipropConfig;
 		backwardphase!(net, conf, target)
 		delayedantihebbianupdate!(net, pretraces, posttraces, conf.learningrate)
 	end
+	save ? savesim(net, conf, losses) : nothing
 	losses
 end
