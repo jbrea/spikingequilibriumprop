@@ -52,6 +52,7 @@ abstract Config
 	inputfunction::Function
 	targetfunction::Function
 	n_ofsamples::Int64
+	learningratefactor::Float64
 	learningrate::Array{FloatXX, 1}
 	records::Int64
 	outputprocessor::Function
@@ -69,7 +70,8 @@ function EquipropConfig(net, seed;
 						outputprocessor = getinputtraceprediction,
 						beta = .5, vargs...)
 	EquipropConfig(stepsforward, stepsbackward, beta, inputfunction, 
-				targetfunction, n_ofsamples, learningrate, records, 
+				targetfunction, n_ofsamples, learningratefactor,
+				learningrate, records, 
 				outputprocessor, seed)
 end
 function getequipropnetandconf(ns; 
