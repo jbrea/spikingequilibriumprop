@@ -65,7 +65,7 @@ function EquipropConfig(net, seed;
 						targetfunction = Z,
 						n_ofsamples = 10^6,
 						learningratefactor = .5,
-						learningrate = learningratefactor*getlrates(net),
+						learningrate = learningratefactor/beta*getlrates(net),
 						records = 10,
 						outputprocessor = getinputtraceprediction,
 						beta = .5, vargs...)
