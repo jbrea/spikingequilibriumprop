@@ -57,6 +57,7 @@ abstract Config
 	records::Int64
 	outputprocessor::Function
 	seed::UInt64
+	backwardupdate::Function
 end
 function EquipropConfig(net, seed;
 						stepsforward = 50,
@@ -68,12 +69,37 @@ function EquipropConfig(net, seed;
 						learningrate = learningratefactor/beta*getlrates(net),
 						records = 10,
 						outputprocessor = getinputtraceprediction,
+						backwardupdate = updatenet!,
 						vargs...)
 	EquipropConfig(stepsforward, stepsbackward, beta, inputfunction, 
 				targetfunction, n_ofsamples, learningratefactor,
 				learningrate, records, 
-				outputprocessor, seed)
+				outputprocessor, seed, backwardupdate)
 end
+type EquipropConfigStorableOld
+    stepsforward::Int64
+	stepsbackward::Int64
+	beta::Float64
+	inputfunction::AbstractString
+	targetfunction::AbstractString
+	n_ofsamples::Int64
+	learningratefactor::Float64
+	learningrate::Array{FloatXX, 1}
+	records::Int64
+	outputprocessor::AbstractString
+	seed::UInt64
+end
+
+JLD.readas(x::EquipropConfigStorableOld) = 
+EquipropConfigStorable(x.stepsforward,
+			  x.stepsbackward, x.beta, x.inputfunction, 
+			  x.targetfunction, x.n_ofsamples, x.learningratefactor,
+			  x.learningrate, x.records, 
+			  x.outputprocessor, x.seed,
+			  "updatenet!")
+
+translate("EquipropConfigStorable", "EquipropConfigStorableOld")
+
 function getequipropnetandconf(ns; 
 							   seed = rand(0:typemax(UInt64) - 1),
 							   vargs...)
@@ -128,7 +154,7 @@ function backwardphase!(net::SimpleNetwork, conf::EquipropConfig,
 	end
 	net.layers[:targetlayer].neurons.outp[:] = target
 	for t in 1:conf.stepsbackward
-		updatenet!(net)
+		conf.backwardupdate(net)
 	end
 end
 

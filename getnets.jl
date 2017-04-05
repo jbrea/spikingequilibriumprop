@@ -78,5 +78,6 @@ function getequipropnet(layerdimensions::Array{Int64, 1};
 	connect!(net, :targetlayer, :outputlayer, targetconnectiontype, label = :somatic)
 	
 	initilizebiases(net)	
+	reverselayerorder!(net)
 	net
 end
