@@ -61,44 +61,21 @@ abstract Config
 end
 function EquipropConfig(net, seed;
 						stepsforward = 50,
-						stepsbackward = 2,
+						stepsbackward = 1,
 						inputfunction = randinput,
 						targetfunction = Z,
 						n_ofsamples = 10^6,
-						learningratefactor = .5, beta = .5,
+						learningratefactor = .5, beta = 2,
 						learningrate = learningratefactor/beta*getlrates(net),
 						records = 10,
 						outputprocessor = getinputtraceprediction,
-						backwardupdate = updatenet!,
+						backwardupdate = updatenetasync!,
 						vargs...)
 	EquipropConfig(stepsforward, stepsbackward, beta, inputfunction, 
 				targetfunction, n_ofsamples, learningratefactor,
 				learningrate, records, 
 				outputprocessor, seed, backwardupdate)
 end
-type EquipropConfigStorableOld
-    stepsforward::Int64
-	stepsbackward::Int64
-	beta::Float64
-	inputfunction::AbstractString
-	targetfunction::AbstractString
-	n_ofsamples::Int64
-	learningratefactor::Float64
-	learningrate::Array{FloatXX, 1}
-	records::Int64
-	outputprocessor::AbstractString
-	seed::UInt64
-end
-
-JLD.readas(x::EquipropConfigStorableOld) = 
-EquipropConfigStorable(x.stepsforward,
-			  x.stepsbackward, x.beta, x.inputfunction, 
-			  x.targetfunction, x.n_ofsamples, x.learningratefactor,
-			  x.learningrate, x.records, 
-			  x.outputprocessor, x.seed,
-			  "updatenet!")
-
-translate("EquipropConfigStorable", "EquipropConfigStorableOld")
 
 function getequipropnetandconf(ns; 
 							   seed = rand(0:typemax(UInt64) - 1),
