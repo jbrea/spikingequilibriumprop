@@ -9,7 +9,7 @@ function twocompurbsenn!(n, u, con, gamma)
 	weightedprerates!(n.somatic, con[:somatic], FloatXX(1.))
 	@inbounds for i in 1:length(u)
 	if n.in_refractoriness[i] <= 0
-		lambda = n.p.gI/2
+		lambda = n.p.gI
 		u[i] = lambda * n.somatic[i] + (1 - lambda) * n.dendritic[i]
 	end
 end
