@@ -5,6 +5,8 @@ include("backprop.jl")
 #include("plotting.jl")
 
 export EquipropConfig, getequipropnet, createandrunsim, getequipropnetandconf,
-	learn! 
+	learn!, StaticDenseConnection, TransposeDenseConnection, One2OneConnection,
+	updatenet!, updatenetasync!, Network, BackpropConfig,
+	getaverageinputtraceprediction
 end
 
