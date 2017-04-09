@@ -114,17 +114,27 @@ type BackpropConfig <: Config
 	noiselevel::FloatXX
 	learningrate::Array{FloatXX}
 	records::Int64
+	seed::UInt64
 end
 
-function BackpropConfig(net; 
+function BackpropConfig(net, seed; 
 						targetfunction = Z,
 						inputfunction  = () -> rand(FloatXX, 2),
 						n_ofsamples = 10^6,
 						learningratefactor = 1.,
 						records = 10,
-						noiselevel = 0.)
+						noiselevel = 0.,
+						vargs...)
 	BackpropConfig(inputfunction, targetfunction, n_ofsamples, noiselevel,
-				   getbackproplrates(net) * learningratefactor, records)
+				   getbackproplrates(net) * learningratefactor, records, seed)
+end
+
+function getbackpropnetandconf(ns; seed = rand(0:typemax(UInt64) - 1),
+							       vargs...)
+	srand(seed)
+	net = BackpropNetwork(ns)
+	conf = BackpropConfig(net, seed; vargs...)
+	net, conf
 end
 
 function setrandominput!(input)
@@ -147,7 +157,7 @@ function breaking(losses, crit)
 end
 
 using ProgressMeter
-function learn!(net::Network, conf::BackpropConfig)
+function learn!(net::Network, conf::BackpropConfig; save = false)
 	losses = FloatXX[]
 	loss = FloatXX(0.)
 	divisor = div(conf.n_ofsamples, conf.records)
@@ -166,5 +176,6 @@ function learn!(net::Network, conf::BackpropConfig)
 		end
 		backprop!(net, conf.learningrate)
 	end
+	save ? savesim(net, conf, losses) : nothing
 	losses
 end

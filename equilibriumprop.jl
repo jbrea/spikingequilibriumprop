@@ -85,9 +85,13 @@ function getequipropnetandconf(ns;
 	conf = EquipropConfig(net, seed; vargs...)
 	net, conf
 end
-function createandrunsim(ns; vargs...)
-	net, conf = getequipropnetandconf(ns; vargs...)
-	learn!(net, conf, save = true)
+function createandrunsim(ns; save = true, vargs...)
+	if (:backprop, true) in vargs
+		net, conf = getbackpropnetandconf(ns; vargs...)
+	else
+		net, conf = getequipropnetandconf(ns; vargs...)
+	end
+	learn!(net, conf, save = save)
 end
 
 function getlrates(net)
